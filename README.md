@@ -84,6 +84,30 @@ For an A+ result, either:
   Response Header Transform Rule, or
 - deploy this same folder to **Cloudflare Pages** or **Netlify**, which apply `_headers` automatically.
 
+## Performance
+
+- **Fonts.** Instrument Serif (normal and italic) and Geist Mono are served as trimmed `*-core-*.woff2` files. These
+  cover basic Latin plus the punctuation the site uses (© · – — ‘ ’ “ ” …) and keep every OpenType feature.
+  The original files stay in each `@font-face` list with the remaining `unicode-range`, so a browser downloads them
+  only if a page ever shows another character. Geist (the body font, also used in the form fields) is not trimmed.
+  If you change the site's text to include other characters, it still renders correctly; it just loads the full
+  font.
+- **Preloads.** The fonts that appear above the fold are preloaded in each page's `<head>`, and the favicon is
+  inlined as a `data:` URI to save a request.
+
+For the fastest responses through Cloudflare, add two **Cache Rules** (Caching → Cache Rules). Paste each expression
+with **Edit expression**:
+
+| Rule | Expression | Cache eligibility | Edge TTL | Browser TTL |
+| --- | --- | --- | --- | --- |
+| Assets | `(http.host eq "scoringandsounddesign.com" and starts_with(http.request.uri.path, "/assets/"))` | Eligible for cache | Ignore cache-control header: 1 year | Override origin: 1 year |
+| Pages | `(http.host eq "scoringandsounddesign.com" and not starts_with(http.request.uri.path, "/assets/") and not starts_with(http.request.uri.path, "/api/"))` | Eligible for cache | Ignore cache-control header: 1 day | Override origin: 10 minutes |
+
+Files in `assets/` have a fingerprint in their name, so caching them for a year is safe. Pages keep a short browser
+TTL so visitors see updates. Cloudflare's edge keeps them for a day, so **after every upload to GitHub, purge the
+cache** (Caching → Configuration → Purge Everything). Also turn on **Tiered Cache** with the **Smart** topology
+(Caching → Tiered Cache). It is free.
+
 ## Hosting at a different address
 
 `robots.txt`, `sitemap.xml` and these tags in the HTML files point to `https://scoringandsounddesign.com`:
