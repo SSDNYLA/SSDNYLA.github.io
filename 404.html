@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; form-action 'self' https://formspree.io; script-src 'self' 'sha256-pRUqDgvScCS89wPYBcR1W/JAQomijhMOOu+LBnIAKXk='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://formspree.io; media-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src https://player.vimeo.com https://w.soundcloud.com; upgrade-insecure-requests" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <!-- Optional: paste a form endpoint (e.g. https://formspree.io/f/yourid) to receive contact form
-             submissions there. Left empty, the form opens the visitor's email app instead. -->
-    <meta name="form-endpoint" content="" />
+    <!-- Contact form submissions are posted here. /api/contact is a Cloudflare Worker that forwards them to
+             Slack (see README). Left empty, the form opens the visitor's email app instead. -->
+    <meta name="form-endpoint" content="/api/contact" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Page not found | NY-LA Scoring &amp; Sound Design Co</title>
     <meta

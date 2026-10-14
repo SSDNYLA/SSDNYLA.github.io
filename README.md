@@ -13,6 +13,7 @@ requested, so it displays correctly only at a domain root.
 | `404.html` | Shown by GitHub Pages for unknown addresses |
 | `assets/` | Fingerprinted scripts, fonts and images |
 | `og-image.jpg` | 1200×630 preview image shown when the site is shared on social media or in messaging apps |
+| `cloudflare/contact-worker.js` | Cloudflare Worker that forwards contact form messages to Slack (see **Contact form**) |
 | `.nojekyll` | Tells GitHub Pages to serve the files as-is (keep this file) |
 | `robots.txt`, `sitemap.xml` | Search engine files for `https://scoringandsounddesign.com` |
 | `_headers` | Security headers for Cloudflare Pages or Netlify (GitHub Pages ignores it) |
@@ -40,18 +41,34 @@ requested, so it displays correctly only at a domain root.
 
 ## Contact form
 
-GitHub Pages cannot run server code, so by default the **Send message** button opens the visitor's email app with
-their message already addressed to `info@scoringandsounddesign.com`.
+The **Send message** button posts the form to `/api/contact` on the site's own domain. GitHub Pages cannot run
+server code, so a Cloudflare Worker answers that address and forwards each message to Slack through an incoming
+webhook. The Worker's code is in `cloudflare/contact-worker.js`. It holds no secrets, so it is safe for it to be
+published with the site.
 
-To get submissions without an email app, create a free form at [Formspree](https://formspree.io), copy its endpoint
-(for example `https://formspree.io/f/abcdwxyz`) and paste it into this line in `index.html`:
+Set up the Worker in Cloudflare **before** publishing a site that posts to `/api/contact`:
+
+1. Open **Workers & Pages**, create a Worker from the **Hello World** template (for example named `contact-form`)
+   and deploy it.
+2. Select **Edit code**, replace all of the code with the contents of `cloudflare/contact-worker.js`, then deploy.
+3. In the Worker's **Settings → Variables and Secrets**, add a variable of type **Secret** named
+   `SLACK_WEBHOOK_URL` whose value is the Slack incoming webhook URL. Keep the webhook URL out of every file.
+4. In **Settings → Domains & Routes**, add a **Route**: zone `scoringandsounddesign.com`, route
+   `scoringandsounddesign.com/api/contact`.
+
+The Worker runs on the same domain as the site, so the page's security policy (`connect-src 'self'`) already allows
+it. It accepts posts only from `https://scoringandsounddesign.com` (and `www.`), and it re-checks every field with
+the same limits as the form. It escapes the text so a visitor cannot post links or `@channel` pings into Slack.
+If the Worker or Slack is unavailable, the form keeps what the visitor typed and shows the email address and phone
+number instead.
+
+To use a different form service, put its address in this line in each HTML file and add the address to
+`connect-src` in the `Content-Security-Policy` (the meta tag and the Cloudflare header rule). Leave the value empty
+to fall back to opening the visitor's email app.
 
 ```html
-<meta name="form-endpoint" content="" />
+<meta name="form-endpoint" content="/api/contact" />
 ```
-
-The page's security policy already allows Formspree. If you use another form service, also add its address to
-`connect-src` in the `Content-Security-Policy` meta tag at the top of `index.html`.
 
 ## Security headers
 
